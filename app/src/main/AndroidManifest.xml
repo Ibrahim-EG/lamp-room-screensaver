@@ -5,7 +5,8 @@
 
     <application
         android:allowBackup="true"
-        android:label="Lamp Room 4.1"
+        android:icon="@drawable/ic_launcher"
+        android:label="Lamp Room 5.7"
         android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
         
         <activity android:name=".MainActivity" android:exported="true">
