@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-LAMP ROOM 6.2 — full fixed version:
-- improved rain animation for day and night
-- added window rain droplets / trickles / mist / sheen
-- thunder is 10x louder with limiter
+LAMP ROOM 6.3
+- radio now streams a real audio file from GitHub
+- clouds fully rebuilt (organic multi-puff, day/night/storm aware)
+- rain fully rebuilt with canvas particle engine (3 depth layers,
+  glass droplets with trails, mist, realistic lightning)
 """
 import os
 import shutil
@@ -79,7 +80,7 @@ overflow:hidden;pointer-events:auto;cursor:pointer;
 .window .bars-v,.window .bars-h{position:absolute;background:#101014;z-index:4}
 .bars-v{left:50%;top:0;bottom:0;width:4px;transform:translateX(-50%)}
 .bars-h{top:50%;left:0;right:0;height:4px;transform:translateY(-50%)}
-.sky{position:absolute;inset:0;transition:opacity 4s ease}
+.sky{position:absolute;inset:0;transition:opacity 4s ease,filter 3s ease}
 .nightbits{position:absolute;inset:0;transition:opacity 1.5s ease}
 .win-stars{position:absolute;inset:0;
 background-image:
@@ -110,23 +111,74 @@ radial-gradient(circle at 50% 50%, transparent 58%, rgba(150,165,215,.3) 96%),
 radial-gradient(circle at 42% 38%, #ffffff, #dfe6ff 55%, #b9c4f0 90%);
 box-shadow:0 0 18px 6px rgba(200,215,255,.5),0 0 70px 26px rgba(160,185,255,.22);
 transition:left 35s linear,top 35s linear,opacity 2s ease}
-.cloud{position:absolute;height:14px;border-radius:20px;filter:blur(4px);z-index:3;
-background:var(--cloudCol,rgba(9,13,30,.9));animation:cloudDrift linear infinite;
-transition:opacity 3s ease;
+
+/* ============================================================
+REALISTIC CLOUDS
+============================================================ */
+.cloudR{position:absolute;z-index:3;pointer-events:none;
+  animation:cloudRDrift linear infinite;
+  transition:opacity 3s ease,filter 3s ease;
+  --cTop:rgba(200,210,230,0.18);
+  --cMid:rgba(150,160,185,0.15);
+  --cBot:rgba(100,110,140,0.12);
 }
-.cloud.c1{width:70px;top:26%;animation-duration:44s;animation-delay:-12s}
-.cloud.c2{width:95px;top:58%;animation-duration:62s;animation-delay:-30s;opacity:.85}
-.cloud.c3{width:56px;top:74%;animation-duration:52s;animation-delay:-4s;opacity:.65}
-.cloud.storm{height:18px;filter:blur(5px);opacity:0;background:rgba(11,15,26,.92)}
-.cloud.c4{width:115px;top:18%;animation-duration:38s;animation-delay:-20s}
-.cloud.c5{width:135px;top:42%;animation-duration:47s;animation-delay:-8s}
-.cloud.c6{width:90px;top:64%;animation-duration:33s;animation-delay:-26s}
-.window.raining .cloud{background:rgba(10,14,24,.92)}
-.window.raining .cloud.c1{opacity:1}
-.window.raining .cloud.c2{opacity:.95}
-.window.raining .cloud.c3{opacity:.9}
-.window.raining .cloud.storm{opacity:.95}
-@keyframes cloudDrift{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
+@keyframes cloudRDrift{from{transform:translateX(-140%)}to{transform:translateX(360%)}}
+.cloudR .puff{position:absolute;border-radius:50%;
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 38%,var(--cTop),transparent 72%),
+    radial-gradient(ellipse 80% 70% at 50% 55%,var(--cMid),transparent 78%),
+    radial-gradient(ellipse 90% 60% at 50% 72%,var(--cBot),transparent 82%);
+  filter:blur(3px);
+}
+.window.raining .cloudR{
+  --cTop:rgba(55,60,80,0.38);
+  --cMid:rgba(30,35,55,0.34);
+  --cBot:rgba(14,18,35,0.32);
+  filter:blur(4px) brightness(0.65);
+}
+.cloudR.cA{width:110px;height:36px;top:14%;animation-duration:48s;animation-delay:-16s}
+.cloudR.cA .p1{left:0;bottom:0;width:44px;height:26px}
+.cloudR.cA .p2{left:22px;bottom:4px;width:56px;height:34px}
+.cloudR.cA .p3{left:52px;bottom:0;width:42px;height:24px}
+.cloudR.cA .p4{left:14px;bottom:12px;width:38px;height:22px}
+.cloudR.cA .p5{left:42px;bottom:10px;width:46px;height:28px}
+.cloudR.cB{width:140px;height:42px;top:38%;animation-duration:64s;animation-delay:-34s;opacity:.85}
+.cloudR.cB .p1{left:0;bottom:0;width:52px;height:28px}
+.cloudR.cB .p2{left:28px;bottom:6px;width:64px;height:38px}
+.cloudR.cB .p3{left:66px;bottom:2px;width:50px;height:26px}
+.cloudR.cB .p4{left:18px;bottom:14px;width:44px;height:26px}
+.cloudR.cB .p5{left:50px;bottom:12px;width:54px;height:32px}
+.cloudR.cB .p6{left:84px;bottom:6px;width:40px;height:24px}
+.cloudR.cC{width:90px;height:30px;top:60%;animation-duration:54s;animation-delay:-8s;opacity:.65}
+.cloudR.cC .p1{left:0;bottom:0;width:38px;height:22px}
+.cloudR.cC .p2{left:20px;bottom:4px;width:48px;height:28px}
+.cloudR.cC .p3{left:46px;bottom:0;width:34px;height:20px}
+.cloudR.cC .p4{left:12px;bottom:10px;width:34px;height:20px}
+.cloudR.cD{width:130px;height:40px;top:22%;animation-duration:40s;animation-delay:-22s;opacity:0}
+.cloudR.cD .p1{left:0;bottom:0;width:48px;height:26px}
+.cloudR.cD .p2{left:26px;bottom:5px;width:60px;height:36px}
+.cloudR.cD .p3{left:60px;bottom:0;width:46px;height:24px}
+.cloudR.cD .p4{left:16px;bottom:13px;width:42px;height:24px}
+.cloudR.cD .p5{left:48px;bottom:11px;width:50px;height:30px}
+.cloudR.cE{width:150px;height:44px;top:48%;animation-duration:46s;animation-delay:-10s;opacity:0}
+.cloudR.cE .p1{left:0;bottom:0;width:54px;height:28px}
+.cloudR.cE .p2{left:30px;bottom:6px;width:66px;height:40px}
+.cloudR.cE .p3{left:70px;bottom:2px;width:52px;height:26px}
+.cloudR.cE .p4{left:20px;bottom:15px;width:46px;height:26px}
+.cloudR.cE .p5{left:54px;bottom:13px;width:56px;height:32px}
+.cloudR.cE .p6{left:90px;bottom:7px;width:42px;height:24px}
+.cloudR.cF{width:100px;height:32px;top:70%;animation-duration:36s;animation-delay:-28s;opacity:0}
+.cloudR.cF .p1{left:0;bottom:0;width:40px;height:22px}
+.cloudR.cF .p2{left:22px;bottom:4px;width:50px;height:28px}
+.cloudR.cF .p3{left:50px;bottom:0;width:36px;height:20px}
+.cloudR.cF .p4{left:14px;bottom:10px;width:36px;height:22px}
+.window.raining .cloudR.cD{opacity:.92}
+.window.raining .cloudR.cE{opacity:.95}
+.window.raining .cloudR.cF{opacity:.88}
+.window.raining .cloudR.cA{opacity:.9}
+.window.raining .cloudR.cB{opacity:.92}
+.window.raining .cloudR.cC{opacity:.85}
+
 .shoot{position:absolute;top:16%;left:72%;width:46px;height:1.5px;border-radius:2px;z-index:3;
 background:linear-gradient(90deg,rgba(255,255,255,0),#fff);
 opacity:0;animation:shoot 13s linear infinite;
@@ -138,51 +190,65 @@ opacity:0;animation:shoot 13s linear infinite;
 4%{opacity:0;transform:rotate(160deg) translateX(90px)}
 100%{opacity:0;transform:rotate(160deg) translateX(90px)}
 }
-.raindim{position:absolute;inset:0;z-index:2;background:rgba(15,20,35,.25);opacity:0;transition:opacity 2.5s;pointer-events:none}
+
+/* ============================================================
+HYPER-REAL RAIN — canvas + glass
+============================================================ */
+.rain-canvas{position:absolute;inset:0;z-index:3;pointer-events:none;
+  opacity:0;transition:opacity 2.2s ease}
+.window.raining .rain-canvas{opacity:1}
+.raindim{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(6,10,18,.42),rgba(10,16,30,.20) 30%,
+    rgba(7,12,24,.34) 68%,rgba(4,7,14,.48));
+  opacity:0;transition:opacity 3s ease}
 .window.raining .raindim{opacity:1}
-.win-rain{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity 1.8s;pointer-events:none;overflow:hidden}
-.window.raining .win-rain{opacity:1}
-.rain-layer{position:absolute;left:-55%;right:-55%;will-change:transform;pointer-events:none;
-transform-origin:50% 0}
-.rain-layer.r1{top:-160px;height:calc(100% + 200px);
-background-image:
-repeating-linear-gradient(to bottom,transparent 0 17px,rgba(190,205,240,.20) 17px 18px,transparent 18px 160px),
-repeating-linear-gradient(to bottom,transparent 0 52px,rgba(190,205,240,.10) 52px 53px,transparent 53px 160px);
-animation:rainFall1 .85s linear infinite;
-}
-.rain-layer.r2{top:-220px;height:calc(100% + 260px);opacity:.65;
-background-image:
-repeating-linear-gradient(to bottom,transparent 0 29px,rgba(200,215,250,.15) 29px 30px,transparent 30px 220px),
-repeating-linear-gradient(to bottom,transparent 0 84px,rgba(200,215,250,.08) 84px 85px,transparent 85px 220px);
-animation:rainFall2 1.2s linear infinite;
-}
-@keyframes rainFall1{
-from{transform:rotate(9deg) translate3d(0,0,0)}
-to{transform:rotate(9deg) translate3d(0,160px,0)}
-}
-@keyframes rainFall2{
-from{transform:rotate(7deg) translate3d(0,0,0)}
-to{transform:rotate(7deg) translate3d(0,220px,0)}
-}
-.lightning{position:absolute;inset:0;z-index:4;background:rgba(220,230,255,.9);opacity:0;pointer-events:none}
-.lightning.flash{animation:flashK .7s ease-out}
-@keyframes flashK{0%{opacity:0}8%{opacity:.85}20%{opacity:.1}32%{opacity:.5}100%{opacity:0}}
-.win-glass-water{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity 3s ease;
-background:
-radial-gradient(circle at 15% 25%, rgba(255,255,255,0.4) 0%, transparent 4%),
-radial-gradient(circle at 45% 65%, rgba(255,255,255,0.3) 0%, transparent 3%),
-radial-gradient(circle at 75% 35%, rgba(255,255,255,0.5) 0%, transparent 5%),
-radial-gradient(circle at 25% 80%, rgba(255,255,255,0.2) 0%, transparent 2%),
-radial-gradient(circle at 85% 75%, rgba(255,255,255,0.4) 0%, transparent 4%),
-radial-gradient(circle at 55% 15%, rgba(255,255,255,0.3) 0%, transparent 3%),
-radial-gradient(circle at 35% 45%, rgba(255,255,255,0.25) 0%, transparent 6%),
-radial-gradient(circle at 65% 85%, rgba(255,255,255,0.35) 0%, transparent 4%);
-filter:blur(1px);
-mix-blend-mode:overlay;
-}
-.window.raining .win-glass-water{opacity:1}
+.window.raining .sky{filter:saturate(.75) brightness(.82) contrast(1.06)}
+.window.raining .sun{filter:blur(3px) brightness(.55) saturate(.6)}
+.window.raining .moon{filter:blur(2px) brightness(.75) saturate(.7)}
+.window.raining .win-stars{filter:blur(1px) brightness(.6)}
+.win-mist{position:absolute;inset:0;z-index:4;pointer-events:none;
+  opacity:0;transition:opacity 4s ease;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 100%,rgba(160,185,220,.12),transparent 60%),
+    radial-gradient(ellipse 90% 60% at 30% 80%,rgba(140,165,200,.08),transparent 55%),
+    radial-gradient(ellipse 100% 50% at 70% 90%,rgba(150,175,210,.09),transparent 50%);
+  filter:blur(2px)}
+.window.raining .win-mist{opacity:1}
 .win-sheen{position:absolute;inset:0;z-index:5;pointer-events:none;
-background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.045) 46%,transparent 60%)}
+  mix-blend-mode:screen;
+  background:linear-gradient(115deg,transparent 24%,rgba(255,255,255,.06) 42%,
+    rgba(255,255,255,.02) 52%,transparent 64%);
+  animation:sheenDrift 11s ease-in-out infinite alternate}
+.window.raining .win-sheen{
+  background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.10) 40%,
+    rgba(255,255,255,.03) 52%,transparent 66%)}
+@keyframes sheenDrift{from{transform:translateX(-3%)}to{transform:translateX(3%)}}
+.window.raining::after{content:"";position:absolute;left:0;right:0;bottom:0;
+  height:18%;z-index:4;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(180deg,transparent,rgba(160,190,235,.10) 50%,rgba(200,225,255,.07));
+  animation:sillMist 5s ease-in-out infinite alternate}
+@keyframes sillMist{from{opacity:.5;filter:blur(0)}to{opacity:1;filter:blur(1px)}}
+.lightning{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(130% 80% at 50% 10%,rgba(248,250,255,.95),rgba(210,226,255,.5) 30%,
+      rgba(165,192,255,.16) 58%,transparent 75%),
+    linear-gradient(180deg,rgba(235,242,255,.85),rgba(195,215,255,.35) 44%,
+      rgba(155,182,255,.12) 72%,transparent 100%)}
+.lightning.flash{animation:flashReal 1.5s cubic-bezier(.14,.82,.28,1)}
+@keyframes flashReal{
+  0%{opacity:0}
+  3%{opacity:.98}
+  7%{opacity:.12}
+  12%{opacity:.88}
+  19%{opacity:.06}
+  28%{opacity:.50}
+  42%{opacity:.04}
+  58%{opacity:.22}
+  78%{opacity:.08}
+  100%{opacity:0}}
+
 .curtain{position:absolute;top:-2px;bottom:-2px;width:56%;z-index:6;
 background:
 linear-gradient(180deg,rgba(255,255,255,.05),transparent 12%,transparent 82%,rgba(0,0,0,.4)),
@@ -860,7 +926,9 @@ body.lowpower .floorpool{filter:blur(3px)}
 body.lowpower .rug-light{filter:blur(2px)}
 body.lowpower .motes .mote:nth-child(even){display:none}
 body.lowpower .moonshaft{filter:none}
-body.lowpower .rain-layer.r2{display:none}
+body.lowpower .cloudR .puff{filter:blur(2px)}
+body.lowpower .rain-canvas{opacity:.6}
+body.lowpower .win-mist{display:none}
 @media (max-width:820px){
 .lamp-assembly{left:calc(50% - 120px)}
 .motes{left:50%}
@@ -872,50 +940,6 @@ body.lowpower .rain-layer.r2{display:none}
 .window{left:4vw;width:42vw;height:22vh}
 .timeplate{right:50%;transform:translate(50%,-50%);top:58%;text-align:center}
 }
-/* ============================================================
-RAIN / WINDOW FX UPGRADE
-============================================================ */
-.sky{transition:opacity 4s ease,filter 3s ease}
-.raindim{background:linear-gradient(180deg,rgba(7,11,20,.38),rgba(10,15,30,.18) 34%,rgba(7,11,20,.30) 72%,rgba(4,7,14,.44));mix-blend-mode:normal}
-.window.raining .raindim{opacity:1}
-.window.raining .sky{filter:saturate(.82) brightness(.85) contrast(1.05)}
-.window.raining .sun{filter:blur(2px) brightness(.68) saturate(.75)}
-.window.raining .moon{filter:blur(1px) brightness(.82) saturate(.75)}
-.window.raining .win-stars{filter:blur(.6px) brightness(.82)}
-.window.raining .cloud{background:rgba(8,12,21,.94)}
-.window.raining .cloud.storm{background:rgba(5,8,15,.97);filter:blur(6px)}
-.window.raining::after{content:"";position:absolute;left:0;right:0;bottom:0;height:16%;z-index:4;pointer-events:none;mix-blend-mode:overlay;opacity:.2;background:linear-gradient(180deg,transparent,rgba(170,195,240,.18) 45%,rgba(220,235,255,.12));animation:sillRain 4.8s ease-in-out infinite alternate}
-@keyframes sillRain{from{opacity:.12;filter:blur(0px)}to{opacity:.28;filter:blur(1px)}}
-.win-rain{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity 1.8s ease;pointer-events:none;overflow:hidden}
-.window.raining .win-rain{opacity:1}
-.win-rain::before,.win-rain::after{content:"";position:absolute;left:-70%;right:-70%;top:-45%;height:190%;pointer-events:none;will-change:transform;mix-blend-mode:normal;filter:blur(1px);opacity:.55}
-.win-rain::before{background-image:repeating-linear-gradient(to bottom,transparent 0 42px,rgba(11,17,30,.10) 42px 43px,transparent 43px 260px),repeating-linear-gradient(to bottom,transparent 0 97px,rgba(190,208,240,.09) 97px 99px,transparent 99px 260px),repeating-linear-gradient(to bottom,transparent 0 156px,rgba(220,232,255,.06) 156px 157px,transparent 157px 260px);animation:rainFallFar 1.75s linear infinite}
-.win-rain::after{background-image:repeating-linear-gradient(to bottom,transparent 0 18px,rgba(10,16,28,.12) 18px 19px,transparent 19px 190px),repeating-linear-gradient(to bottom,transparent 0 73px,rgba(205,220,250,.10) 73px 75px,transparent 75px 190px),repeating-linear-gradient(to bottom,transparent 0 128px,rgba(230,240,255,.06) 128px 129px,transparent 129px 190px);animation:rainFallNear .95s linear infinite;opacity:.72;filter:blur(.6px)}
-.rain-layer{position:absolute;left:-65%;right:-65%;will-change:transform;pointer-events:none;transform-origin:50% 0;mix-blend-mode:normal}
-.rain-layer.r1{top:-190px;height:calc(100% + 260px);opacity:.92;filter:blur(.4px);background-image:repeating-linear-gradient(to bottom,transparent 0 13px,rgba(8,13,24,.18) 13px 15px,transparent 15px 180px),repeating-linear-gradient(to bottom,transparent 0 17px,rgba(228,238,255,.30) 17px 19px,transparent 19px 180px),repeating-linear-gradient(to bottom,transparent 0 49px,rgba(205,220,250,.22) 49px 50px,transparent 50px 180px),repeating-linear-gradient(to bottom,transparent 0 82px,rgba(10,16,30,.14) 82px 84px,transparent 84px 180px),repeating-linear-gradient(to bottom,transparent 0 123px,rgba(220,232,255,.12) 123px 124px,transparent 124px 180px),repeating-linear-gradient(to bottom,transparent 0 151px,rgba(170,190,230,.10) 151px 152px,transparent 152px 180px);background-position:0 -8px,0 -12px,0 -47px,0 -78px,0 -117px,0 -148px;animation:rainFall1 .72s linear infinite}
-.rain-layer.r2{top:-260px;height:calc(100% + 330px);opacity:.66;filter:blur(.85px);background-image:repeating-linear-gradient(to bottom,transparent 0 24px,rgba(8,13,24,.12) 24px 25px,transparent 25px 240px),repeating-linear-gradient(to bottom,transparent 0 31px,rgba(202,218,250,.17) 31px 32px,transparent 32px 240px),repeating-linear-gradient(to bottom,transparent 0 74px,rgba(220,232,255,.12) 74px 76px,transparent 76px 240px),repeating-linear-gradient(to bottom,transparent 0 132px,rgba(186,203,240,.10) 132px 133px,transparent 133px 240px),repeating-linear-gradient(to bottom,transparent 0 188px,rgba(230,240,255,.08) 188px 189px,transparent 189px 240px);background-position:0 -18px,0 -28px,0 -70px,0 -126px,0 -183px;animation:rainFall2 1.18s linear infinite}
-.window.raining .rain-layer.r1{animation-duration:.68s}
-.window.raining .rain-layer.r2{animation-duration:1.12s}
-@keyframes rainFall1{from{transform:rotate(9.5deg) translate3d(0,0,0)}to{transform:rotate(9.5deg) translate3d(0,180px,0)}}
-@keyframes rainFall2{from{transform:rotate(7.2deg) translate3d(0,0,0)}to{transform:rotate(7.2deg) translate3d(0,240px,0)}}
-@keyframes rainFallFar{from{transform:rotate(5.8deg) translate3d(0,0,0)}to{transform:rotate(5.8deg) translate3d(0,260px,0)}}
-@keyframes rainFallNear{from{transform:rotate(11.5deg) translate3d(0,0,0)}to{transform:rotate(11.5deg) translate3d(0,190px,0)}}
-.lightning{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(120% 70% at 50% 12%,rgba(245,248,255,.94),rgba(214,228,255,.52) 34%,rgba(170,195,255,.18) 62%,transparent 78%),linear-gradient(180deg,rgba(235,242,255,.82),rgba(200,218,255,.36) 46%,rgba(160,185,255,.14) 74%,transparent 100%)}
-.lightning.flash{animation:flashK 1.35s cubic-bezier(.16,.84,.3,1)}
-@keyframes flashK{0%{opacity:0}4%{opacity:.96}9%{opacity:.14}15%{opacity:.82}23%{opacity:.08}34%{opacity:.44}55%{opacity:.05}72%{opacity:.18}100%{opacity:0}}
-.win-glass-water{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity 2.2s ease;background-image:radial-gradient(circle at 11% 16%,rgba(255,255,255,.50) 0%,transparent 3.4%),radial-gradient(circle at 22% 38%,rgba(255,255,255,.28) 0%,transparent 2.4%),radial-gradient(circle at 35% 12%,rgba(255,255,255,.38) 0%,transparent 2.8%),radial-gradient(circle at 47% 52%,rgba(255,255,255,.24) 0%,transparent 2.0%),radial-gradient(circle at 58% 28%,rgba(255,255,255,.42) 0%,transparent 3.8%),radial-gradient(circle at 69% 63%,rgba(255,255,255,.22) 0%,transparent 2.2%),radial-gradient(circle at 79% 34%,rgba(255,255,255,.36) 0%,transparent 3.0%),radial-gradient(circle at 88% 70%,rgba(255,255,255,.26) 0%,transparent 2.6%),radial-gradient(circle at 30% 76%,rgba(255,255,255,.18) 0%,transparent 2.0%),radial-gradient(circle at 64% 84%,rgba(255,255,255,.22) 0%,transparent 2.7%),linear-gradient(180deg,rgba(255,255,255,.055),transparent 18%,transparent 76%,rgba(255,255,255,.07));filter:blur(.7px) contrast(1.08) brightness(1.06);mix-blend-mode:overlay}
-.window.raining .win-glass-water{opacity:.94}
-.win-glass-water::before{content:"";position:absolute;inset:-22% -10%;pointer-events:none;mix-blend-mode:screen;filter:blur(1.1px);opacity:.55;background-image:radial-gradient(circle at 28px 18px,rgba(255,255,255,.13) 0%,rgba(255,255,255,.04) 18%,transparent 24%),radial-gradient(circle at 16px 28px,rgba(255,255,255,.08) 0%,rgba(255,255,255,.02) 16%,transparent 22%),radial-gradient(circle at 44px 10px,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 20%,transparent 26%);background-size:64px 110px,92px 150px,128px 190px;background-repeat:repeat;animation:glassTrickle 6s linear infinite}
-.win-glass-water::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.36;filter:blur(2px);background:radial-gradient(18% 28% at 20% 78%,rgba(255,255,255,.12),transparent 70%),radial-gradient(22% 30% at 74% 70%,rgba(255,255,255,.10),transparent 72%),radial-gradient(30% 20% at 50% 96%,rgba(255,255,255,.12),transparent 74%);animation:glassPulse 7s ease-in-out infinite alternate}
-@keyframes glassTrickle{from{background-position:0 -22px,14px -46px,-18px -70px}to{background-position:0 74px,14px 76px,-18px 78px}}
-@keyframes glassPulse{from{opacity:.22;transform:translateY(0)}to{opacity:.42;transform:translateY(2px)}}
-.win-sheen{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;background:linear-gradient(115deg,transparent 26%,rgba(255,255,255,.05) 44%,rgba(255,255,255,.015) 53%,transparent 66%);animation:sheenDrift 12s ease-in-out infinite alternate}
-.window.raining .win-sheen{background:linear-gradient(115deg,transparent 22%,rgba(255,255,255,.085) 44%,rgba(255,255,255,.02) 54%,transparent 70%)}
-@keyframes sheenDrift{from{transform:translateX(-2.5%)}to{transform:translateX(2.5%)}}
-body.lowpower .win-rain::before{display:none}
-body.lowpower .win-rain::after{display:none}
-body.lowpower .win-glass-water::before{display:none}
-body.lowpower .win-glass-water::after{display:none}
 </style>
 </head>
 <body>
@@ -933,15 +957,15 @@ body.lowpower .win-glass-water::after{display:none}
 </div>
 <div class="sun" id="sunEl"></div>
 <div class="moon" id="moonEl"></div>
-<div class="cloud c1"></div>
-<div class="cloud c2"></div>
-<div class="cloud c3"></div>
-<div class="cloud c4 storm"></div>
-<div class="cloud c5 storm"></div>
-<div class="cloud c6 storm"></div>
-<div class="win-rain"><i class="rain-layer r1"></i><i class="rain-layer r2"></i></div>
+<div class="cloudR cA"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i><i class="puff p5"></i></div>
+<div class="cloudR cB"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i><i class="puff p5"></i><i class="puff p6"></i></div>
+<div class="cloudR cC"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i></div>
+<div class="cloudR cD"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i><i class="puff p5"></i></div>
+<div class="cloudR cE"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i><i class="puff p5"></i><i class="puff p6"></i></div>
+<div class="cloudR cF"><i class="puff p1"></i><i class="puff p2"></i><i class="puff p3"></i><i class="puff p4"></i></div>
+<canvas class="rain-canvas" id="rainCanvas"></canvas>
 <div class="lightning" id="lightningEl"></div>
-<div class="win-glass-water"></div>
+<div class="win-mist"></div>
 <div class="win-sheen"></div>
 <div class="bars-v"></div>
 <div class="bars-h"></div>
@@ -1313,7 +1337,7 @@ if(AC){startFireBed();if(rainOn)rainAudioStart();}
 document.addEventListener('pointerdown',ensureAC,{once:true});
 soundBtn.addEventListener('click',function(){
 soundOn=!soundOn;localStorage.setItem('lr-sound',soundOn?'1':'0');paintSound();
-if(soundOn){ensureAC();}else{stopFireBed();radioBedStop();rainAudioStop();}
+if(soundOn){ensureAC();}else{stopFireBed();radioBedStop();rainAudioStop();if(radioAudio)radioAudio.pause();}
 wake();
 });
 function note(freq,t,vol,dur){
@@ -1489,197 +1513,10 @@ if(Math.random()<0.35)setTimeout(function(){cracklePop(0.05+Math.random()*0.09);
 crackleLoop();
 },400+Math.random()*2400);
 })();
-/* ================= RADIO — Audiophile Orchestral Lo-Fi ================= */
-var radioOn=false, radioTimer=null, radioBed=null, chordIdx=0, radioMaster=null, reverbNode=null, compressor=null;
-function ensureRadioFX(){
-if(!radioMaster && AC){
-radioMaster = AC.createGain();
-radioMaster.gain.value = 1.0;
-compressor = AC.createDynamicsCompressor();
-compressor.threshold.value = -24;
-compressor.knee.value = 30;
-compressor.ratio.value = 8;
-compressor.attack.value = 0.003;
-compressor.release.value = 0.25;
-var masterHP = AC.createBiquadFilter();
-masterHP.type = 'highpass';
-masterHP.frequency.value = 45;
-masterHP.Q.value = 0.7;
-var masterLP = AC.createBiquadFilter();
-masterLP.type = 'lowpass';
-masterLP.frequency.value = 14000;
-masterLP.Q.value = 0.5;
-reverbNode = AC.createConvolver();
-var sampleRate = AC.sampleRate;
-var length = sampleRate * 3.5;
-var impulse = AC.createBuffer(2, length, sampleRate);
-for (var channel = 0; channel < 2; channel++) {
-var channelData = impulse.getChannelData(channel);
-for (var i = 0; i < length; i++) {
-var decay = Math.pow(1 - i / length, 2.8);
-channelData[i] = (Math.random() * 2 - 1) * decay;
-}
-}
-reverbNode.buffer = impulse;
-var dryGain = AC.createGain(); dryGain.gain.value = 0.85;
-var wetGain = AC.createGain(); wetGain.gain.value = 0.45;
-compressor.connect(masterHP);
-masterHP.connect(masterLP);
-masterLP.connect(dryGain);
-masterLP.connect(reverbNode);
-reverbNode.connect(wetGain);
-dryGain.connect(radioMaster);
-wetGain.connect(radioMaster);
-radioMaster.connect(AC.destination);
-}
-}
-function playUprightBass(freq, t, vol, dur){
-ensureRadioFX(); if(!compressor) return;
-var osc = AC.createOscillator();
-osc.type = 'sine';
-osc.frequency.setValueAtTime(freq * 1.02, t);
-osc.frequency.exponentialRampToValueAtTime(freq, t + 0.05);
-var env = AC.createGain();
-env.gain.setValueAtTime(0.0001, t);
-env.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-env.gain.exponentialRampToValueAtTime(vol * 0.6, t + 0.1);
-env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-var lp = AC.createBiquadFilter();
-lp.type = 'lowpass'; lp.frequency.value = 800;
-osc.connect(lp); lp.connect(env); env.connect(compressor);
-osc.start(t); osc.stop(t + dur + 0.1);
-}
-function playHarp(freq, t, vol, dur){
-ensureRadioFX(); if(!compressor) return;
-var osc1 = AC.createOscillator(); osc1.type = 'triangle'; osc1.frequency.value = freq;
-var osc2 = AC.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = freq * 2;
-var osc3 = AC.createOscillator(); osc3.type = 'sine'; osc3.frequency.value = freq * 3;
-var env1 = AC.createGain();
-env1.gain.setValueAtTime(0.0001, t);
-env1.gain.exponentialRampToValueAtTime(vol, t + 0.005);
-env1.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-var env2 = AC.createGain();
-env2.gain.setValueAtTime(0.0001, t);
-env2.gain.exponentialRampToValueAtTime(vol * 0.4, t + 0.005);
-env2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.3);
-var env3 = AC.createGain();
-env3.gain.setValueAtTime(0.0001, t);
-env3.gain.exponentialRampToValueAtTime(vol * 0.15, t + 0.005);
-env3.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.15);
-osc1.connect(env1); env1.connect(compressor);
-osc2.connect(env2); env2.connect(compressor);
-osc3.connect(env3); env3.connect(compressor);
-osc1.start(t); osc2.start(t); osc3.start(t);
-osc1.stop(t+dur+0.1); osc2.stop(t+dur+0.1); osc3.stop(t+dur+0.1);
-}
-function playFlute(freq, t, vol, dur){
-ensureRadioFX(); if(!compressor) return;
-var osc = AC.createOscillator();
-osc.type = 'sine'; osc.frequency.value = freq;
-var lfo = AC.createOscillator();
-lfo.type = 'sine'; lfo.frequency.value = 4.5;
-var lfoGain = AC.createGain(); lfoGain.gain.value = 3;
-lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
-var noiseLen = Math.floor(AC.sampleRate * dur);
-var noiseBuf = AC.createBuffer(1, noiseLen, AC.sampleRate);
-var nd = noiseBuf.getChannelData(0);
-for(var i=0; i<noiseLen; i++) nd[i] = (Math.random()*2-1)*0.05;
-var noise = AC.createBufferSource(); noise.buffer = noiseBuf;
-var bp = AC.createBiquadFilter();
-bp.type = 'bandpass'; bp.frequency.value = freq * 2; bp.Q.value = 2;
-var env = AC.createGain();
-env.gain.setValueAtTime(0.0001, t);
-env.gain.linearRampToValueAtTime(vol, t + 0.15);
-env.gain.linearRampToValueAtTime(vol * 0.8, t + dur * 0.7);
-env.gain.linearRampToValueAtTime(0.0001, t + dur);
-var noiseEnv = AC.createGain();
-noiseEnv.gain.setValueAtTime(0.0001, t);
-noiseEnv.gain.linearRampToValueAtTime(vol * 0.3, t + 0.05);
-noiseEnv.gain.linearRampToValueAtTime(0.0001, t + 0.2);
-osc.connect(env); noise.connect(bp); bp.connect(noiseEnv);
-env.connect(compressor); noiseEnv.connect(compressor);
-osc.start(t); lfo.start(t); noise.start(t);
-osc.stop(t+dur+0.1); lfo.stop(t+dur+0.1); noise.stop(t+dur+0.1);
-}
-function playStrings(freqs, t, vol, dur){
-ensureRadioFX(); if(!compressor) return;
-freqs.forEach(function(freq) {
-var saw1 = AC.createOscillator(); saw1.type = 'sawtooth'; saw1.frequency.value = freq;
-var saw2 = AC.createOscillator(); saw2.type = 'sawtooth'; saw2.frequency.value = freq * 1.005;
-var lp = AC.createBiquadFilter();
-lp.type = 'lowpass';
-lp.frequency.setValueAtTime(400, t);
-lp.frequency.linearRampToValueAtTime(1200, t + 1.5);
-lp.frequency.linearRampToValueAtTime(600, t + dur);
-lp.Q.value = 0.8;
-var env = AC.createGain();
-env.gain.setValueAtTime(0.0001, t);
-env.gain.linearRampToValueAtTime(vol / freqs.length, t + 1.2);
-env.gain.linearRampToValueAtTime(vol / freqs.length * 0.9, t + dur - 1);
-env.gain.linearRampToValueAtTime(0.0001, t + dur);
-saw1.connect(lp); saw2.connect(lp);
-lp.connect(env); env.connect(compressor);
-saw1.start(t); saw2.start(t);
-saw1.stop(t+dur+0.5); saw2.stop(t+dur+0.5);
-});
-}
-function playGlock(freq, t, vol, dur){
-ensureRadioFX(); if(!compressor) return;
-var osc1 = AC.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = freq;
-var osc2 = AC.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = freq * 3.14;
-var env1 = AC.createGain();
-env1.gain.setValueAtTime(0.0001, t);
-env1.gain.exponentialRampToValueAtTime(vol, t + 0.002);
-env1.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-var env2 = AC.createGain();
-env2.gain.setValueAtTime(0.0001, t);
-env2.gain.exponentialRampToValueAtTime(vol * 0.4, t + 0.002);
-env2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.3);
-osc1.connect(env1); env1.connect(compressor);
-osc2.connect(env2); env2.connect(compressor);
-osc1.start(t); osc2.start(t);
-osc1.stop(t+dur+0.1); osc2.stop(t+dur+0.1);
-}
-var CHORDS_COMPLEX = [
-{ bass: 87.31, pad: [174.61, 220.00, 261.63, 329.63], arp: [174.61, 261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63] },
-{ bass: 73.42, pad: [146.83, 220.00, 261.63, 329.63], arp: [146.83, 220.00, 293.66, 349.23, 440.00, 349.23, 293.66, 220.00] },
-{ bass: 58.27, pad: [116.54, 174.61, 233.08, 293.66], arp: [116.54, 174.61, 233.08, 293.66, 349.23, 293.66, 233.08, 174.61] },
-{ bass: 65.41, pad: [130.81, 196.00, 246.94, 293.66], arp: [130.81, 196.00, 246.94, 329.63, 392.00, 329.63, 246.94, 196.00] }
-];
-var MELODY_NOTES = [349.23, 392.00, 440.00, 523.25, 587.33, 698.46, 783.99, 880.00];
-function scheduleBar(){
-if(!radioOn)return;
-if(soundOn&&AC&&AC.state==='running'){
-try{
-var t=AC.currentTime+0.05;
-var ch=CHORDS_COMPLEX[chordIdx%CHORDS_COMPLEX.length];chordIdx++;
-playUprightBass(ch.bass, t, 0.3, 1.8);
-playUprightBass(ch.bass * 1.5, t + 1.9, 0.2, 1.8);
-playStrings(ch.pad, t, 0.12, 3.8);
-var arpStep = 0.45 + Math.random() * 0.1;
-for(var i=0; i<8; i++){
-var timeOffset = (Math.random() - 0.5) * 0.04;
-var vol = 0.08 + Math.random() * 0.04;
-playHarp(ch.arp[i], t + 0.2 + i * arpStep + timeOffset, vol, 1.2);
-}
-if(Math.random() < 0.75){
-var mStart = t + 0.8 + Math.random() * 1.2;
-var mNotes = 2 + Math.floor(Math.random() * 3);
-for(var m=0; m<mNotes; m++){
-var mNote = MELODY_NOTES[Math.floor(Math.random()*MELODY_NOTES.length)];
-var mDur = 0.8 + Math.random() * 1.2;
-playFlute(mNote, mStart, 0.12, mDur);
-mStart += mDur + 0.2 + Math.random() * 0.4;
-}
-}
-if(Math.random() < 0.5){
-var gStart = t + 2.5 + Math.random() * 1.0;
-playGlock(MELODY_NOTES[4 + Math.floor(Math.random()*4)], gStart, 0.06, 1.5);
-}
-}catch(e){}
-}
-radioTimer=setTimeout(scheduleBar, 3800 + Math.random() * 400);
-}
+/* ================= RADIO — Real Streamed Music ================= */
+var RADIO_URL="https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/assets/radio.mp3";
+/* ↑ CHANGE THIS to your actual GitHub raw file URL ↑ */
+var radioOn=false, radioAudio=null, radioBed=null;
 function radioBedStart(){
 if(!AC||radioBed)return;
 try{
@@ -1687,13 +1524,13 @@ var len=Math.floor(AC.sampleRate*2);
 var buf=AC.createBuffer(1,len,AC.sampleRate);
 var d=buf.getChannelData(0);
 for(var i=0;i<len;i++){
-d[i]=(Math.random()*2-1)*0.015;
-if(Math.random()<0.0008)d[i]+=(Math.random()*2-1)*0.35;
+d[i]=(Math.random()*2-1)*0.012;
+if(Math.random()<0.0006)d[i]+=(Math.random()*2-1)*0.3;
 }
 var src=AC.createBufferSource();src.buffer=buf;src.loop=true;
-var lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2500;
+var lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2200;
 var g=AC.createGain();g.gain.setValueAtTime(0.0001,AC.currentTime);
-g.gain.setTargetAtTime(0.25,AC.currentTime,1);
+g.gain.setTargetAtTime(0.18,AC.currentTime,1);
 src.connect(lp);lp.connect(g);g.connect(AC.destination);src.start();
 radioBed={src:src,g:g};
 }catch(e){}
@@ -1710,90 +1547,248 @@ e.stopPropagation();
 radioOn=!radioOn;
 radioEl.classList.toggle('on',radioOn);
 if(radioOn){
-ensureAC();radioBedStart();clearTimeout(radioTimer);scheduleBar();
+ensureAC();
+if(!radioAudio){
+radioAudio=new Audio(RADIO_URL);
+radioAudio.loop=true;
+radioAudio.volume=0.72;
+radioAudio.preload='none';
+}
+radioAudio.play().catch(function(){
+var resume=function(){radioAudio.play().catch(function(){});
+document.removeEventListener('pointerdown',resume);};
+document.addEventListener('pointerdown',resume);
+});
+radioBedStart();
 }else{
-clearTimeout(radioTimer);radioBedStop();
+if(radioAudio){radioAudio.pause();}
+radioBedStop();
 }
 wake();
 });
-/* ================= RAIN ================= */
-var rainOn=false,rainNodes=null;
+/* ================= RAIN — Canvas Engine ================= */
+var rainOn=false, rainNodes=null;
+var rainCanvas=document.getElementById('rainCanvas'),
+    rainCtx=rainCanvas.getContext('2d'),
+    rainDrops=[], glassDrops=[], rainRAF=null,
+    rainIntensity=0, rainTarget=0;
+function sizeRainCanvas(){
+var r=windowEl.getBoundingClientRect();
+rainCanvas.width=Math.max(r.width,60);
+rainCanvas.height=Math.max(r.height,60);
+}
+sizeRainCanvas();
+addEventListener('resize',sizeRainCanvas);
+function makeDrop(layer){
+var w=rainCanvas.width,h=rainCanvas.height;
+var cfg=[
+{len:[4,10], spd:[3.5,6],  op:[0.06,0.13], lw:0.6},
+{len:[10,18],spd:[7,11],   op:[0.14,0.24], lw:1.0},
+{len:[16,28],spd:[12,18],  op:[0.25,0.40], lw:1.5}
+][layer];
+return {
+x:Math.random()*(w+60)-30,
+y:Math.random()*-h-20,
+len:cfg.len[0]+Math.random()*(cfg.len[1]-cfg.len[0]),
+spd:cfg.spd[0]+Math.random()*(cfg.spd[1]-cfg.spd[0]),
+op:cfg.op[0]+Math.random()*(cfg.op[1]-cfg.op[0]),
+lw:cfg.lw+Math.random()*0.4,
+layer:layer
+};
+}
+function initRainDrops(){
+rainDrops=[];
+var w=rainCanvas.width;
+var counts=[Math.floor(w*0.45),Math.floor(w*0.28),Math.floor(w*0.14)];
+for(var l=0;l<3;l++)for(var i=0;i<counts[l];i++)rainDrops.push(makeDrop(l));
+}
+function makeGlassDrop(){
+var w=rainCanvas.width,h=rainCanvas.height;
+return {
+x:Math.random()*w,
+y:Math.random()*h*0.25-10,
+r:0.8+Math.random()*2.2,
+vy:0.08+Math.random()*0.35,
+wobAmp:0.15+Math.random()*0.4,
+wobSpd:0.015+Math.random()*0.03,
+wob:Math.random()*Math.PI*2,
+trail:[],
+maxTrail:14+Math.floor(Math.random()*14),
+stick:Math.random()<0.18
+};
+}
+function initGlassDrops(){
+glassDrops=[];
+var n=Math.floor(rainCanvas.width*0.22);
+for(var i=0;i<n;i++)glassDrops.push(makeGlassDrop());
+}
+function renderRain(){
+if(!rainOn){rainRAF=null;return;}
+var w=rainCanvas.width,h=rainCanvas.height;
+rainCtx.clearRect(0,0,w,h);
+rainIntensity+=(rainTarget-rainIntensity)*0.02;
+var wind=Math.sin(Date.now()*0.00008)*1.2+2.4;
+rainCtx.lineCap='round';
+for(var i=0;i<rainDrops.length;i++){
+var d=rainDrops[i];
+d.y+=d.spd;
+d.x+=wind*(0.6+d.layer*0.25);
+if(d.y>h+d.len){d.y=Math.random()*-40-10;d.x=Math.random()*(w+60)-30;}
+if(d.x>w+40)d.x=-30;
+var ang=Math.atan2(d.spd,wind*(0.6+d.layer*0.25));
+var dx=Math.cos(ang)*d.len, dy=Math.sin(ang)*d.len;
+var a=d.op*rainIntensity;
+if(a<0.01)continue;
+rainCtx.beginPath();
+rainCtx.moveTo(d.x,d.y);
+rainCtx.lineTo(d.x-dx,d.y-dy);
+rainCtx.strokeStyle='rgba(185,205,238,'+a.toFixed(3)+')';
+rainCtx.lineWidth=d.lw;
+rainCtx.stroke();
+}
+for(var j=0;j<glassDrops.length;j++){
+var g=glassDrops[j];
+if(g.stick&&Math.random()<0.995)continue;
+g.wob+=g.wobSpd;
+g.y+=g.vy*rainIntensity;
+g.x+=Math.sin(g.wob)*g.wobAmp*0.3;
+if(g.y>h+8){
+g.y=-6;g.x=Math.random()*w;g.trail=[];g.stick=Math.random()<0.15;
+continue;
+}
+g.trail.push({x:g.x,y:g.y});
+if(g.trail.length>g.maxTrail)g.trail.shift();
+if(g.trail.length>2){
+for(var t=1;t<g.trail.length;t++){
+var ta=(t/g.trail.length)*0.10*rainIntensity;
+rainCtx.beginPath();
+rainCtx.moveTo(g.trail[t-1].x,g.trail[t-1].y);
+rainCtx.lineTo(g.trail[t].x,g.trail[t].y);
+rainCtx.strokeStyle='rgba(195,215,245,'+ta.toFixed(3)+')';
+rainCtx.lineWidth=g.r*0.5;
+rainCtx.stroke();
+}
+}
+var gr=rainCtx.createRadialGradient(g.x-g.r*0.3,g.y-g.r*0.3,0,g.x,g.y,g.r);
+gr.addColorStop(0,'rgba(255,255,255,'+(0.50*rainIntensity).toFixed(3)+')');
+gr.addColorStop(0.5,'rgba(200,218,248,'+(0.30*rainIntensity).toFixed(3)+')');
+gr.addColorStop(1,'rgba(175,195,235,'+(0.06*rainIntensity).toFixed(3)+')');
+rainCtx.beginPath();
+rainCtx.arc(g.x,g.y,g.r,0,6.2832);
+rainCtx.fillStyle=gr;
+rainCtx.fill();
+}
+rainRAF=requestAnimationFrame(renderRain);
+}
 function rainAudioStart(){
 if(!AC||rainNodes)return;
 try{
-var len=Math.floor(AC.sampleRate*2);
-var buf=AC.createBuffer(1,len,AC.sampleRate);
-var d=buf.getChannelData(0);var lastN=0;
-for(var i=0;i<len;i++){var wv=Math.random()*2-1;lastN=(lastN+0.02*wv)/1.02;d[i]=lastN*3.5;}
+var len=Math.floor(AC.sampleRate*2.5);
+var buf=AC.createBuffer(2,len,AC.sampleRate);
+for(var ch=0;ch<2;ch++){
+var d=buf.getChannelData(ch);var last=0;
+for(var i=0;i<len;i++){
+var w=Math.random()*2-1;
+last=(last+0.018*w)/1.018;
+d[i]=last*3.2;
+}
+}
 var src=AC.createBufferSource();src.buffer=buf;src.loop=true;
-var lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;
+var lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=820;
+var hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=180;
 var g=AC.createGain();g.gain.setValueAtTime(0.0001,AC.currentTime);
-g.gain.setTargetAtTime(0.11,AC.currentTime,2.0);
-src.connect(lp);lp.connect(g);g.connect(AC.destination);src.start();
+g.gain.setTargetAtTime(0.13,AC.currentTime,2.5);
+src.connect(hp);hp.connect(lp);lp.connect(g);g.connect(AC.destination);src.start();
 rainNodes={src:src,g:g};
 }catch(e){}
 }
 function rainAudioStop(){
 if(!rainNodes)return;var n=rainNodes;rainNodes=null;
 try{
-n.g.gain.setTargetAtTime(0.0001,AC.currentTime,1.8);
+n.g.gain.setTargetAtTime(0.0001,AC.currentTime,2);
 setTimeout(function(){try{n.src.stop();}catch(e){}},6000);
 }catch(e){}
 }
 function thunder(){
 if(!soundOn||!AC||AC.state!=='running')return;
 try{
-var t=AC.currentTime+0.25+Math.random()*0.5;
-var len=Math.floor(AC.sampleRate*2.2);
+var t=AC.currentTime+0.2+Math.random()*0.6;
+var len=Math.floor(AC.sampleRate*2.5);
 var buf=AC.createBuffer(1,len,AC.sampleRate);
-var d=buf.getChannelData(0);var lastN=0;
+var d=buf.getChannelData(0);var last=0;
 for(var i=0;i<len;i++){
-var wv=Math.random()*2-1;lastN=(lastN+0.015*wv)/1.015;
-d[i]=lastN*4*Math.pow(1-i/len,1.4);
+var w=Math.random()*2-1;
+last=(last+0.014*w)/1.014;
+d[i]=last*4.2*Math.pow(1-i/len,1.3);
 }
 var src=AC.createBufferSource();src.buffer=buf;
-var lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;
+var lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=280;
 var g=AC.createGain();g.gain.setValueAtTime(0.0001,t);
-g.gain.exponentialRampToValueAtTime(16.5,t+0.12);
-g.gain.exponentialRampToValueAtTime(0.0001,t+2.0);
+g.gain.exponentialRampToValueAtTime(18,t+0.10);
+g.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
 var src2=AC.createBufferSource();src2.buffer=buf;
-var lp2=AC.createBiquadFilter();lp2.type='lowpass';lp2.frequency.value=180;
-var g2=AC.createGain();g2.gain.setValueAtTime(0.0001,t+0.45);
-g2.gain.exponentialRampToValueAtTime(9.6,t+0.6);
-g2.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
-var limit=AC.createDynamicsCompressor();
-limit.threshold.value=-18;limit.knee.value=8;limit.ratio.value=16;limit.attack.value=0.001;limit.release.value=0.22;
-src.connect(lp);lp.connect(g);g.connect(limit);
-src2.connect(lp2);lp2.connect(g2);g2.connect(limit);
-limit.connect(AC.destination);
-src.start(t);src2.start(t+0.45);
+var lp2=AC.createBiquadFilter();lp2.type='lowpass';lp2.frequency.value=160;
+var g2=AC.createGain();g2.gain.setValueAtTime(0.0001,t+0.5);
+g2.gain.exponentialRampToValueAtTime(11,t+0.65);
+g2.gain.exponentialRampToValueAtTime(0.0001,t+2.4);
+var lim=AC.createDynamicsCompressor();
+lim.threshold.value=-16;lim.knee.value=6;lim.ratio.value=18;
+lim.attack.value=0.001;lim.release.value=0.24;
+src.connect(lp);lp.connect(g);g.connect(lim);
+src2.connect(lp2);lp2.connect(g2);g2.connect(lim);
+lim.connect(AC.destination);
+src.start(t);src2.start(t+0.5);
 }catch(e){}
 }
 function lightningLoop(){
 if(!rainOn)return;
 setTimeout(function(){
 if(!rainOn)return;
-if(Math.random()<0.45){
-lightningEl.classList.remove('flash');void lightningEl.offsetWidth;
+if(Math.random()<0.5){
+lightningEl.classList.remove('flash');
+void lightningEl.offsetWidth;
 lightningEl.classList.add('flash');
 thunder();
 }
 lightningLoop();
-},7000+Math.random()*13000);
+},6000+Math.random()*14000);
 }
 function startRain(){
 if(rainOn)return;
-rainOn=true;windowEl.classList.add('raining');
+rainOn=true;
+windowEl.classList.add('raining');
+sizeRainCanvas();
+initRainDrops();
+initGlassDrops();
+rainTarget=0;
+var ramp=setInterval(function(){
+rainTarget=Math.min(1,rainTarget+0.06);
+if(rainTarget>=1)clearInterval(ramp);
+},180);
+if(!rainRAF)rainRAF=requestAnimationFrame(renderRain);
 if(soundOn&&AC)rainAudioStart();
 lightningLoop();
-setTimeout(stopRain,(300+Math.random()*400)*1000);
+setTimeout(stopRain,(240+Math.random()*480)*1000);
 }
 function stopRain(){
-rainOn=false;windowEl.classList.remove('raining');rainAudioStop();
+if(!rainOn)return;
+rainTarget=0;
+var fade=setInterval(function(){
+rainIntensity-=0.04;
+if(rainIntensity<=0){
+clearInterval(fade);
+rainOn=false;
+windowEl.classList.remove('raining');
+if(rainRAF){cancelAnimationFrame(rainRAF);rainRAF=null;}
+}
+},80);
+rainAudioStop();
 }
 (function rainScheduler(first){
-setTimeout(function(){if(!rainOn)startRain();rainScheduler(false);},
-first?(150+Math.random()*150)*1000:(400+Math.random()*600)*1000);
+setTimeout(function(){
+if(!rainOn)startRain();
+rainScheduler(false);
+},first?(120+Math.random()*180)*1000:(360+Math.random()*600)*1000);
 })(true);
 /* ================= geometry ================= */
 var W=innerWidth,H=innerHeight,baseX=0,lampHpx=0;
@@ -1817,6 +1812,7 @@ fireCX=mr.left+mr.width/2;
 firepoolEl.style.left=fireCX+'px';
 if(kState==='idle'||kState==='sit'){kx=kHomeX();kittyEl.style.left=kx+'px';}
 yarnEl.style.left=clamp(yarnEl.offsetLeft,16,W-40)+'px';
+sizeRainCanvas();
 }
 addEventListener('resize',measure);
 /* ================= physics ================= */
@@ -1913,9 +1909,6 @@ var inL=skyFlip?document.getElementById('skyA'):document.getElementById('skyB');
 var outL=skyFlip?document.getElementById('skyB'):document.getElementById('skyA');
 inL.style.background=grad;inL.style.opacity='1';outL.style.opacity='0';
 skyFlip=!skyFlip;
-var cc=mixC([9,13,30],mixC(c[2],[255,255,255],0.55),dayFactor);
-var cloudAlpha = 0.5 + dayFactor*0.3 + (rainOn ? 0.28 : 0);
-windowEl.style.setProperty('--cloudCol','rgba('+(cc[0]|0)+','+(cc[1]|0)+','+(cc[2]|0)+','+clamp(cloudAlpha,0,0.95).toFixed(2)+')');
 var shaftCol=mixC([255,235,190],[255,176,96],warm);
 if(dayFactor>0.03){
 shaft.style.background='linear-gradient(180deg,rgba('+(shaftCol[0]|0)+','+(shaftCol[1]|0)+','+(shaftCol[2]|0)+',.28),rgba('+(shaftCol[0]|0)+','+(shaftCol[1]|0)+','+(shaftCol[2]|0)+',.10) 55%,transparent 90%)';
@@ -2624,7 +2617,7 @@ def get_lan_ip():
         return "127.0.0.1"
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "LampRoom/6.2"
+    server_version = "LampRoom/6.3"
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
@@ -2642,32 +2635,27 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     tls = ensure_certs()
     port = 8443 if tls else 8000
-
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
         except ValueError:
             print("port must be a number")
             return
-
     lan_ip = get_lan_ip()
     scheme = "https" if tls else "http"
-
     print()
     print("  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print("   L A M P   R O O M   6.2")
-    print("   fixed rain + window effects")
+    print("   L A M P   R O O M   6.3")
+    print("   real radio · hyper-real rain & clouds")
     print("  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("   this device : %s://127.0.0.1:%d" % (scheme, port))
     print("   your WiFi   : %s://%s:%d   <- open this" % (scheme, lan_ip, port))
     print()
-
     if tls:
         print("   accept the browser warning once (self-signed")
         print("   cert) — needed for location, wake-lock, etc.")
-        print("   Ctrl+C to stop.")
-        print()
-
+    print("   Ctrl+C to stop.")
+    print()
     wake_lock = shutil.which("termux-wake-lock")
     if wake_lock:
         try:
@@ -2675,7 +2663,6 @@ def main():
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception:
             pass
-
     try:
         server = ThreadingHTTPServer((HOST, port), Handler)
         if tls:
@@ -2685,19 +2672,18 @@ def main():
     except OSError as e:
         print("could not start: %s" % e)
         return
-
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nturning the lamp off... bye")
     finally:
         server.server_close()
-        if wake_lock and shutil.which("termux-wake-unlock"):
-            try:
-                subprocess.run(["termux-wake-unlock"], check=False,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception:
-                pass
+    if wake_lock and shutil.which("termux-wake-unlock"):
+        try:
+            subprocess.run(["termux-wake-unlock"], check=False,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
