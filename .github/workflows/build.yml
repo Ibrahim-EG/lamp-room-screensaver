@@ -32,6 +32,11 @@ jobs:
           print('Extracted', len(m.group(1)), 'characters of HTML')
           PYEOF
 
+      - name: Copy audio file to Android assets
+        run: |
+          cp main/assets/radio.mp3 app/src/main/assets/radio.mp3
+          echo "Audio file bundled successfully!"
+
       - name: Generate Gradle Wrapper
         run: |
           gradle wrapper --gradle-version 8.4
