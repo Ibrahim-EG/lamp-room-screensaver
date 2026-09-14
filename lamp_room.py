@@ -1514,7 +1514,7 @@ crackleLoop();
 },400+Math.random()*2400);
 })();
 /* ================= RADIO — Real Streamed Music ================= */
-var RADIO_URL="https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/assets/radio.mp3";
+var RADIO_URL="https://raw.githubusercontent.com/Ibrahim-EG/lamp-room-screensaver/main/assets/radio.mp3";
 /* ↑ CHANGE THIS to your actual GitHub raw file URL ↑ */
 var radioOn=false, radioAudio=null, radioBed=null;
 function radioBedStart(){
